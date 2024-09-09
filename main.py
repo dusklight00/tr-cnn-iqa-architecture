@@ -9,6 +9,7 @@ from models.cnn import CNN
 from tqdm import tqdm
 from dataset import KadidDataset
 import torch.nn.functional as F
+from skimage import io
 
 def rgb_to_grayscale(tensor):
     return 0.2989 * tensor[:, 0, :, :] + 0.5870 * tensor[:, 1, :, :] + 0.1140 * tensor[:, 2, :, :]
@@ -68,6 +69,24 @@ if __name__ == '__main__':
     vit_optimizer.step()
 
     print(f"Loss: {loss.item()}")
+
+    break
+
+  transform = ToTensor()  
+
+  sample_image = io.imread("sample.png")
+  sample_image = transform(sample_image)
+  sample_image = sample_image.reshape(1, sample_image.shape[0], sample_image.shape[1], sample_image.shape[2])
+  sample_image = rgb_to_grayscale(sample_image).unsqueeze(0)
+  sample_image = sample_image.to(device)
+  sample_output = cnn(sample_image)
+  sample_output = vit(sample_output)
+  print(sample_output)
+
+
+
+
+
 
   # with torch.no_grad():
   #   correct = 0
