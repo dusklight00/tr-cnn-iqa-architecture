@@ -86,10 +86,10 @@ class MyViTBlock(nn.Module):
     return out
 
 
-class MyViT(nn.Module):
+class ViT(nn.Module):
   def __init__(self, chw, n_patches=7, n_blocks=2, hidden_d=8, n_heads=2, out_d=10):
       # Super constructor
-      super(MyViT, self).__init__()
+      super(ViT, self).__init__()
 
       # Attributes
       self.chw = chw  # ( C , H , W )
