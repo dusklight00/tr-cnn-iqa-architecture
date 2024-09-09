@@ -27,12 +27,10 @@ class KadidDataset(Dataset):
         image = io.imread(img_name)
         dmos_value = self.dataset.iloc[idx, 2] / max(self.dataset.iloc[:, 2])
 
-
         sample = [image, dmos_value]
 
         if self.transform:
             image = self.transform(image)
             sample = [image, dmos_value]
-        # print(sample)
 
         return sample

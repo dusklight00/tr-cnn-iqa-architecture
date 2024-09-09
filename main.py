@@ -10,27 +10,11 @@ from tqdm import tqdm
 from dataset import KadidDataset
 import torch.nn.functional as F
 from skimage import io
-
-def rgb_to_grayscale(tensor):
-    return 0.2989 * tensor[:, 0, :, :] + 0.5870 * tensor[:, 1, :, :] + 0.1140 * tensor[:, 2, :, :]
+from utils import rgb_to_grayscale
+from models.trcnn import TrCNN
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-print(device)
-
-# train_data = datasets.MNIST(
-#     root = 'data',
-#     train = True,
-#     download = True,
-#     transform = ToTensor()
-# )
-
-# test_data = datasets.MNIST(
-#     root = 'data',
-#     train = False,
-#     download = True,
-#     transform = ToTensor()
-# )
 
 train_data = KadidDataset(
   csv_file="data/kadid10k/dmos.csv",
@@ -43,10 +27,23 @@ train_loader = DataLoader(train_data, batch_size=100, shuffle=True, num_workers=
 
 criterion = nn.MSELoss()
 
-cnn = CNN((100, 100)).to(device)
+cnn = CNN(
+  diffusion_x=100, 
+  diffusion_y=100
+).to(device)
+
 vit = ViT(
-        (1, 100, 100), n_patches=10, n_blocks=2, hidden_d=8, n_heads=2, out_d=1
-    ).to(device)
+  channel=1, 
+  height=100, 
+  width=100, 
+  n_patches=10, 
+  n_blocks=2, 
+  hidden_d=8, 
+  n_heads=2, 
+  out_d=1
+).to(device)
+
+trcnn = TrCNN(cnn, vit).to(device)
 
 cnn_optimizer = optim.Adam(cnn.parameters(), lr=0.01)
 vit_optimizer = optim.Adam(vit.parameters(), lr=0.01)
@@ -59,8 +56,7 @@ if __name__ == '__main__':
     x = rgb_to_grayscale(x).unsqueeze(1) 
     y = y.reshape(-1, 1).float()
     x, y = x.to(device), y.to(device)
-    y_hat = cnn(x)
-    y_hat = vit(y_hat)
+    y_hat = trcnn(x)
     loss = criterion(y_hat, y)
     cnn_optimizer.zero_grad()
     vit_optimizer.zero_grad()
@@ -69,8 +65,6 @@ if __name__ == '__main__':
     vit_optimizer.step()
 
     print(f"Loss: {loss.item()}")
-
-    break
 
   transform = ToTensor()  
 

@@ -87,12 +87,12 @@ class MyViTBlock(nn.Module):
 
 
 class ViT(nn.Module):
-  def __init__(self, chw, n_patches=7, n_blocks=2, hidden_d=8, n_heads=2, out_d=10):
+  def __init__(self, channel, height, width, n_patches=7, n_blocks=2, hidden_d=8, n_heads=2, out_d=10):
       # Super constructor
       super(ViT, self).__init__()
 
       # Attributes
-      self.chw = chw  # ( C , H , W )
+      self.chw = (channel, height, width)  # ( C , H , W )
       self.n_patches = n_patches
       self.n_blocks = n_blocks
       self.n_heads = n_heads
@@ -100,15 +100,15 @@ class ViT(nn.Module):
 
       # Input and patches sizes
       assert (
-        chw[1] % n_patches == 0
+        self.chw[1] % n_patches == 0
       ), "Input shape not entirely divisible by number of patches"
       assert (
-        chw[2] % n_patches == 0
+        self.chw[2] % n_patches == 0
       ), "Input shape not entirely divisible by number of patches"
-      self.patch_size = (chw[1] / n_patches, chw[2] / n_patches)
+      self.patch_size = (self.chw[1] / n_patches, self.chw[2] / n_patches)
 
       # 1) Linear mapper
-      self.input_d = int(chw[0] * self.patch_size[0] * self.patch_size[1])
+      self.input_d = int(self.chw[0] * self.patch_size[0] * self.patch_size[1])
       self.linear_mapper = nn.Linear(self.input_d, self.hidden_d)
 
       # 2) Learnable classification token

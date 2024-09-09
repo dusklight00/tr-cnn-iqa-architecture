@@ -3,11 +3,11 @@ import torch.nn as nn
 import torchvision.models as models
 
 class CNN(nn.Module):
-  def __init__(self, dim):
+  def __init__(self, diffusion_x, diffusion_y):
     super(CNN, self).__init__()
 
-    self.dim_x = dim[0]
-    self.dim_y = dim[1]
+    self.diffusion_x = diffusion_x
+    self.diffusion_y = diffusion_y
 
     # Load the pre-trained ResNet-18 model
     resnet = models.resnet18(pretrained=True)
@@ -28,7 +28,7 @@ class CNN(nn.Module):
 
     # Replace the last fully connected layer
     num_features = resnet.fc.in_features
-    self.fc = nn.Linear(num_features, self.dim_x * self.dim_y)
+    self.fc = nn.Linear(num_features, self.diffusion_x * self.diffusion_y)
 
   def forward(self, x):
     x = self.conv1(x)
@@ -42,5 +42,5 @@ class CNN(nn.Module):
     x = self.avgpool(x)
     x = x.view(x.size(0), -1)
     output = self.fc(x)
-    output = output.view(-1, 1, self.dim_x, self.dim_y)
+    output = output.view(-1, 1, self.diffusion_x, self.diffusion_y)
     return output
