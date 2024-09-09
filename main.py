@@ -43,6 +43,9 @@ vit = ViT(
   out_d=1
 ).to(device)
 
+cnn.load_state_dict(torch.load("cnn.pth"))
+vit.load_state_dict(torch.load("vit.pth"))
+
 trcnn = TrCNN(cnn, vit).to(device)
 
 cnn_optimizer = optim.Adam(cnn.parameters(), lr=0.01)
@@ -65,6 +68,11 @@ if __name__ == '__main__':
     vit_optimizer.step()
 
     print(f"Loss: {loss.item()}")
+
+    break
+
+  torch.save(vit.state_dict(), "vit.pth")
+  torch.save(cnn.state_dict(), "cnn.pth")
 
   transform = ToTensor()  
 
