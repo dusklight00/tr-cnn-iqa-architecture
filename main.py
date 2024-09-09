@@ -7,31 +7,44 @@ import torch.optim as optim
 from models.vit import ViT
 from models.cnn import CNN
 from tqdm import tqdm
+from dataset import KadidDataset
+import torch.nn.functional as F
+
+def rgb_to_grayscale(tensor):
+    return 0.2989 * tensor[:, 0, :, :] + 0.5870 * tensor[:, 1, :, :] + 0.1140 * tensor[:, 2, :, :]
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-train_data = datasets.MNIST(
-    root = 'data',
-    train = True,
-    download = True,
-    transform = ToTensor()
-)
+print(device)
 
-test_data = datasets.MNIST(
-    root = 'data',
-    train = False,
-    download = True,
-    transform = ToTensor()
+# train_data = datasets.MNIST(
+#     root = 'data',
+#     train = True,
+#     download = True,
+#     transform = ToTensor()
+# )
+
+# test_data = datasets.MNIST(
+#     root = 'data',
+#     train = False,
+#     download = True,
+#     transform = ToTensor()
+# )
+
+train_data = KadidDataset(
+  csv_file="data/kadid10k/dmos.csv",
+  root_dir="data/kadid10k/images",
+  transform=ToTensor()
 )
 
 train_loader = DataLoader(train_data, batch_size=100, shuffle=True, num_workers=1)
-test_loader = DataLoader(test_data, batch_size=100, shuffle=True, num_workers=1)
+# test_loader = DataLoader(test_data, batch_size=100, shuffle=True, num_workers=1)
 
-criterion = nn.CrossEntropyLoss()
+criterion = nn.MSELoss()
 
-cnn = CNN((12, 12)).to(device)
+cnn = CNN((100, 100)).to(device)
 vit = ViT(
-        (1, 12, 12), n_patches=3, n_blocks=2, hidden_d=8, n_heads=2, out_d=10
+        (1, 100, 100), n_patches=10, n_blocks=2, hidden_d=8, n_heads=2, out_d=1
     ).to(device)
 
 cnn_optimizer = optim.Adam(cnn.parameters(), lr=0.01)
@@ -41,6 +54,9 @@ if __name__ == '__main__':
     
   for batch in tqdm(train_loader, desc='Training'):
     x, y = batch
+
+    x = rgb_to_grayscale(x).unsqueeze(1) 
+    y = y.reshape(-1, 1).float()
     x, y = x.to(device), y.to(device)
     y_hat = cnn(x)
     y_hat = vit(y_hat)
@@ -50,24 +66,25 @@ if __name__ == '__main__':
     loss.backward()
     cnn_optimizer.step()
     vit_optimizer.step()
-    print(loss)
 
-  with torch.no_grad():
-    correct = 0
-    total = 0
+    print(f"Loss: {loss.item()}")
 
-    for images, labels in tqdm(test_loader, desc='Testing'):
+  # with torch.no_grad():
+  #   correct = 0
+  #   total = 0
 
-      images = images.to(device)
-      labels = labels.to(device)
+  #   for images, labels in tqdm(test_loader, desc='Testing'):
 
-      test_output = cnn(images)
-      test_output = vit(test_output)
+  #     images = images.to(device)
+  #     labels = labels.to(device)
 
-      pred_y = torch.max(test_output, 1)[1].data.squeeze()
-      total += labels.size(0)
+  #     test_output = cnn(images)
+  #     test_output = vit(test_output)
 
-      correct += (pred_y == labels).sum().item()
+  #     pred_y = torch.max(test_output, 1)[1].data.squeeze()
+  #     total += labels.size(0)
 
-    accuracy = correct / total
-    print(f"Test Accuracy of the model on the {total} test images: {accuracy}")
+  #     correct += (pred_y == labels).sum().item()
+
+  #   accuracy = correct / total
+  #   print(f"Test Accuracy of the model on the {total} test images: {accuracy}")
