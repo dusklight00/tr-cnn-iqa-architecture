@@ -6,7 +6,7 @@ import torch.nn as nn
 import torch.optim as optim
 from models.vit import ViT
 from models.cnn import CNN
-
+from tqdm import tqdm
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
@@ -39,15 +39,35 @@ vit_optimizer = optim.Adam(vit.parameters(), lr=0.01)
 
 if __name__ == '__main__':
     
-  for batch in train_loader:
-      x, y = batch
-      x, y = x.to(device), y.to(device)
-      y_hat = cnn(x)
-      y_hat = vit(y_hat)
-      loss = criterion(y_hat, y)
-      cnn_optimizer.zero_grad()
-      vit_optimizer.zero_grad()
-      loss.backward()
-      cnn_optimizer.step()
-      vit_optimizer.step()
-      print(loss)
+  for batch in tqdm(train_loader, desc='Training'):
+    x, y = batch
+    x, y = x.to(device), y.to(device)
+    y_hat = cnn(x)
+    y_hat = vit(y_hat)
+    loss = criterion(y_hat, y)
+    cnn_optimizer.zero_grad()
+    vit_optimizer.zero_grad()
+    loss.backward()
+    cnn_optimizer.step()
+    vit_optimizer.step()
+    print(loss)
+
+  with torch.no_grad():
+    correct = 0
+    total = 0
+
+    for images, labels in tqdm(test_loader, desc='Testing'):
+
+      images = images.to(device)
+      labels = labels.to(device)
+
+      test_output = cnn(images)
+      test_output = vit(test_output)
+
+      pred_y = torch.max(test_output, 1)[1].data.squeeze()
+      total += labels.size(0)
+
+      correct += (pred_y == labels).sum().item()
+
+    accuracy = correct / total
+    print(f"Test Accuracy of the model on the {total} test images: {accuracy}")
