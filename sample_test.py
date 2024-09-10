@@ -16,7 +16,7 @@ from utils import rgb_to_grayscale
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-SAMPLE_IMAGE_PATH = "sample.png"
+SAMPLE_IMAGE_PATH = "images.jpg"
 
 def load_sample_image(image_path):
   transform = ToTensor()  
@@ -46,10 +46,11 @@ vit = ViT(
 cnn.load_state_dict(torch.load("cnn.pth"))
 vit.load_state_dict(torch.load("vit.pth"))
 
-trcnn = TrCNN(cnn, vit).to(device)
+with torch.no_grad():
+  trcnn = TrCNN(cnn, vit).to(device)
 
-sample_image = load_sample_image(SAMPLE_IMAGE_PATH)
-sample_output = trcnn(sample_image)
+  sample_image = load_sample_image(SAMPLE_IMAGE_PATH)
+  sample_output = trcnn(sample_image)
 
-print(f"Accuracy: {sample_output.item()}")
+  print(f"Accuracy: {sample_output.item()}")
 

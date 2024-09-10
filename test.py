@@ -9,29 +9,37 @@ from tqdm import tqdm
 from utils import rgb_to_grayscale
 import torch.optim as optim
 import torch.nn as nn
+import os
 
 VIT_MODEL_PATH = "vit.pth"
 CNN_MODEL_PATH = "cnn.pth"
+BATCH_SIZE=50
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 print(f"Device: {device}")
 
-def test(trcnn, loader, device='cpu'):
+def test(vit, cnn, loader, device='cpu'):
   accuracy = 0
-  for batch in tqdm(loader, desc='Training'):
-    x, y = batch
+  with torch.no_grad():
+    for batch in tqdm(loader, desc='Testing'):
+      x, y = batch
 
-    x = rgb_to_grayscale(x).unsqueeze(1) 
-    y = y.reshape(-1, 1).float()
-    x, y = x.to(device), y.to(device)
+      x = rgb_to_grayscale(x).unsqueeze(1) 
+      y = y.reshape(-1, 1).float()
+      x, y = x.to(device), y.to(device)
 
-    y_hat = trcnn(x)
-    accuracy += 1 - torch.sigmoid(y_hat - y).abs().mean()
+      # y_hat = trcnn(x)
+      # y_hat = vit(cnn(x))
 
-  accuracy = accuracy / len(loader)
+      print(y_hat)
 
-  return accuracy
+      accuracy += 1 - torch.sigmoid(y_hat - y).abs().mean()
+      torch.cuda.empty_cache()
+
+    accuracy = accuracy / len(loader)
+
+    return accuracy
 
 
 data = KadidDataset(
@@ -40,7 +48,7 @@ data = KadidDataset(
   transform=ToTensor()
 )
 
-loader = DataLoader(data, batch_size=100, shuffle=True, num_workers=1)
+loader = DataLoader(data, batch_size=BATCH_SIZE, shuffle=True, num_workers=1)
 
 cnn = CNN(
   diffusion_x=100, 
@@ -64,7 +72,7 @@ vit.load_state_dict(torch.load(VIT_MODEL_PATH))
 trcnn = TrCNN(cnn, vit).to(device)
 
 if __name__ == '__main__':
-  accuracy = test(trcnn, loader, device)
+  accuracy = test(vit, cnn, loader, device)
   print(f"Accuracy: {accuracy}")
 
   torch.cuda.empty_cache()
