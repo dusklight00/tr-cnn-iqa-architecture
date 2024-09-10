@@ -21,6 +21,10 @@ SAVE_EACH_EPOCH = True
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
+print(f"Device: {device}")
+
+os.environ['PYTORCH_CUDA_ALLOC_CONF'] = 'expandable_segments:True'
+
 def train(trcnn, cnn, vit, loader, learning_rate=0.01, device='cpu'):
 
   cnn_optimizer = optim.Adam(cnn.parameters(), lr=learning_rate)
@@ -63,7 +67,7 @@ def train(trcnn, cnn, vit, loader, learning_rate=0.01, device='cpu'):
   return mean_loss
 
 data = KadidDataset(
-  csv_file="data/kadid10k/dmos.csv",
+  csv_file="data/kadid10k/dmos.csv",  
   root_dir="data/kadid10k/images",
   transform=ToTensor()
 )
@@ -101,5 +105,7 @@ if __name__ == '__main__':
   if SAVE_EACH_EPOCH:
     torch.save(cnn.state_dict(), CNN_MODEL_PATH)
     torch.save(vit.state_dict(), VIT_MODEL_PATH)
+  
+  torch.cuda.empty_cache()
 
 

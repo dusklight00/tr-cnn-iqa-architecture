@@ -14,7 +14,6 @@ class KadidDataset(Dataset):
         self.transform = transform
 
         dmos_value = self.dataset.iloc[0, 2] / max(self.dataset.iloc[:, 2])
-        print("DMOS value is : " + str(dmos_value))
     
     def __len__(self):
         return len(self.dataset)

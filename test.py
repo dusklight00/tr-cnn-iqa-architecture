@@ -15,6 +15,8 @@ CNN_MODEL_PATH = "cnn.pth"
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
+print(f"Device: {device}")
+
 def test(trcnn, loader, device='cpu'):
   accuracy = 0
   for batch in tqdm(loader, desc='Training'):
@@ -64,3 +66,5 @@ trcnn = TrCNN(cnn, vit).to(device)
 if __name__ == '__main__':
   accuracy = test(trcnn, loader, device)
   print(f"Accuracy: {accuracy}")
+
+  torch.cuda.empty_cache()
