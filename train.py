@@ -9,9 +9,12 @@ from tqdm import tqdm
 from utils import rgb_to_grayscale
 import torch.optim as optim
 import torch.nn as nn
+import pickle
+import os
 
 VIT_MODEL_PATH = "vit.pth"
 CNN_MODEL_PATH = "cnn.pth"
+LOSS_HISTORY_PATH = "loss_history.pkl"
 EPOOCHS = 10
 SAVE_EACH_BATCH = False
 SAVE_EACH_EPOCH = True
@@ -26,6 +29,12 @@ def train(trcnn, cnn, vit, loader, learning_rate=0.01, device='cpu'):
   criterion = nn.MSELoss()
 
   total_loss = 0
+  loss_history = []
+
+  if os.path.exists(LOSS_HISTORY_PATH):
+    with open(LOSS_HISTORY_PATH, 'rb') as f:
+      loss_history = pickle.load(f)
+
   for batch in tqdm(loader, desc='Training'):
     x, y = batch
 
@@ -36,6 +45,10 @@ def train(trcnn, cnn, vit, loader, learning_rate=0.01, device='cpu'):
     y_hat = trcnn(x)
 
     loss = criterion(y_hat, y)
+    loss_history.append(loss.item())
+    with open(LOSS_HISTORY_PATH, 'wb') as f:
+      pickle.dump(loss_history, f)
+
     total_loss += loss.item()
 
     cnn_optimizer.zero_grad()
