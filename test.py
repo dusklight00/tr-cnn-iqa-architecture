@@ -12,20 +12,11 @@ import torch.nn as nn
 
 VIT_MODEL_PATH = "vit.pth"
 CNN_MODEL_PATH = "cnn.pth"
-EPOOCHS = 10
-SAVE_EACH_BATCH = False
-SAVE_EACH_EPOCH = True
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-def train(trcnn, cnn, vit, loader, learning_rate=0.01, device='cpu'):
-
-  cnn_optimizer = optim.Adam(cnn.parameters(), lr=learning_rate)
-  vit_optimizer = optim.Adam(vit.parameters(), lr=learning_rate)
-  
-  criterion = nn.MSELoss()
-
-  total_loss = 0
+def test(trcnn, loader, device='cpu'):
+  accuracy = 0
   for batch in tqdm(loader, desc='Training'):
     x, y = batch
 
@@ -34,20 +25,12 @@ def train(trcnn, cnn, vit, loader, learning_rate=0.01, device='cpu'):
     x, y = x.to(device), y.to(device)
 
     y_hat = trcnn(x)
+    accuracy += 1 - torch.sigmoid(y_hat - y).abs().mean()
 
-    loss = criterion(y_hat, y)
-    total_loss += loss.item()
+  accuracy = accuracy / len(loader)
 
-    cnn_optimizer.zero_grad()
-    vit_optimizer.zero_grad()
+  return accuracy
 
-    loss.backward()
-
-    cnn_optimizer.step()
-    vit_optimizer.step()
-  
-  mean_loss = total_loss / len(loader)
-  return mean_loss
 
 data = KadidDataset(
   csv_file="data/kadid10k/dmos.csv",
@@ -79,14 +62,5 @@ vit.load_state_dict(torch.load(VIT_MODEL_PATH))
 trcnn = TrCNN(cnn, vit).to(device)
 
 if __name__ == '__main__':
-  for epoch in range(EPOOCHS):
-    loss = train(trcnn, cnn, vit, loader, device=device)
-    print(f"Epoch: {epoch}, Loss: {loss}")
-    if SAVE_EACH_BATCH:
-      torch.save(cnn.state_dict(), CNN_MODEL_PATH)
-      torch.save(vit.state_dict(), VIT_MODEL_PATH)
-  if SAVE_EACH_EPOCH:
-    torch.save(cnn.state_dict(), CNN_MODEL_PATH)
-    torch.save(vit.state_dict(), VIT_MODEL_PATH)
-
-
+  accuracy = test(trcnn, loader, device)
+  print(f"Accuracy: {accuracy}")
