@@ -24,6 +24,7 @@ class KadidDataset(Dataset):
         
         img_name = os.path.join(self.root_dir, self.dataset.iloc[idx, 0])
         image = io.imread(img_name)
+        image = np.dot(image[...,:3], [0.2989, 0.5870, 0.1140])
         dmos_value = self.dataset.iloc[idx, 2] / max(self.dataset.iloc[:, 2])
 
         sample = [image, dmos_value]
